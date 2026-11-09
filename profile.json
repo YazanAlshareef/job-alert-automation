@@ -1,0 +1,18 @@
+{
+  "candidate": {
+    "summary": "EDIT ME: 2-3 plain sentences about you, e.g. degree, year, what you want to learn.",
+    "target_roles": ["data analyst intern", "AI intern", "machine learning intern", "data science intern"],
+    "skills": ["Python", "SQL", "Excel"],
+    "location_preference": "remote or Australia",
+    "avoid": ["senior", "10+ years", "security clearance"]
+  },
+  "keywords": ["intern", "graduate", "junior", "entry level", "data analyst", "machine learning", "AI"],
+  "top_n": 5,
+  "min_score": 6,
+  "max_to_score": 45,
+  "sources": [
+    {"type": "remotive", "category": "data", "limit": 50},
+    {"type": "arbeitnow", "limit": 100},
+    {"type": "rss", "name": "weworkremotely", "url": "https://weworkremotely.com/remote-jobs.rss"}
+  ]
+}

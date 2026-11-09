@@ -1,0 +1,65 @@
+[
+  {
+    "id": "5164bd4c9425",
+    "source": "sample",
+    "title": "Junior Data Analyst",
+    "company": "Northwind Example Co",
+    "url": "https://example.com/jobs/1",
+    "location": "Remote",
+    "description": "Entry-level role. Build dashboards with SQL and Python, clean datasets and report weekly metrics. Graduates welcome."
+  },
+  {
+    "id": "415f99a0a163",
+    "source": "sample",
+    "title": "Machine Learning Intern",
+    "company": "Example Labs",
+    "url": "https://example.com/jobs/2",
+    "location": "Brisbane, Australia",
+    "description": "Internship supporting a small ML team. Train and evaluate models in Python, document experiments, learn MLOps basics."
+  },
+  {
+    "id": "e428e1893636",
+    "source": "sample",
+    "title": "Data Engineering Intern",
+    "company": "Sample Analytics Ltd",
+    "url": "https://example.com/jobs/3",
+    "location": "Remote",
+    "description": "Help build ETL pipelines with Python and SQL. Learn Airflow and cloud storage. No prior industry experience needed."
+  },
+  {
+    "id": "9671c74f4dc6",
+    "source": "sample",
+    "title": "Senior Backend Engineer",
+    "company": "Placeholder Systems",
+    "url": "https://example.com/jobs/4",
+    "location": "Remote",
+    "description": "8+ years building distributed services in Go. Lead a team of five and own on-call rotation."
+  },
+  {
+    "id": "0963bd36dbfc",
+    "source": "sample",
+    "title": "Graphic Design Intern",
+    "company": "Demo Studio",
+    "url": "https://example.com/jobs/5",
+    "location": "Sydney, Australia",
+    "description": "Create social media graphics and brand assets using design tools. Portfolio required."
+  },
+  {
+    "id": "b9aa9222b004",
+    "source": "sample",
+    "title": "AI Research Assistant",
+    "company": "Fictional Institute",
+    "url": "https://example.com/jobs/6",
+    "location": "Remote",
+    "description": "Support research on language models: collect data, run evaluations in Python, write short reports. Part-time, students welcome."
+  },
+  {
+    "id": "9497504b185d",
+    "source": "sample",
+    "title": "Sales Development Representative",
+    "company": "Acme Test Corp",
+    "url": "https://example.com/jobs/7",
+    "location": "Remote",
+    "description": "Outbound prospecting and cold calls. Quota-driven role with commission."
+  }
+]

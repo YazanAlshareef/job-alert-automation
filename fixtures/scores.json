@@ -1,0 +1,31 @@
+{
+  "_note": "SAMPLE scores written by hand so --dry-run works with no API key. Not real Gemini output.",
+  "5164bd4c9425": {
+    "score": 9,
+    "reason": "Entry-level data role using SQL and Python, matches the profile."
+  },
+  "415f99a0a163": {
+    "score": 8,
+    "reason": "ML internship in Python, good fit and nearby."
+  },
+  "e428e1893636": {
+    "score": 8,
+    "reason": "Data engineering internship, no experience needed."
+  },
+  "9671c74f4dc6": {
+    "score": 2,
+    "reason": "Senior Go role, far too advanced."
+  },
+  "0963bd36dbfc": {
+    "score": 1,
+    "reason": "Design role, not a data or AI job."
+  },
+  "b9aa9222b004": {
+    "score": 7,
+    "reason": "AI research support, part-time, fits a student."
+  },
+  "9497504b185d": {
+    "score": 1,
+    "reason": "Sales role, unrelated."
+  }
+}
