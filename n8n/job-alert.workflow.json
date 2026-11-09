@@ -1,0 +1,205 @@
+{
+  "name": "Daily job alert",
+  "nodes": [
+    {
+      "id": "n1",
+      "name": "Every morning",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "n2",
+      "name": "Fetch Remotive",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "url": "https://remotive.com/api/remote-jobs?category=data&limit=50",
+        "options": {}
+      }
+    },
+    {
+      "id": "n3",
+      "name": "Fetch Arbeitnow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "url": "https://www.arbeitnow.com/api/job-board-api",
+        "options": {}
+      }
+    },
+    {
+      "id": "n4",
+      "name": "Normalize and dedupe",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Edit PROFILE to match profile.json (same fields). Runs once for all items.\nconst PROFILE = {\n  candidate: {\n    summary: 'EDIT ME: 2-3 plain sentences about you.',\n    target_roles: ['data analyst intern', 'AI intern', 'machine learning intern'],\n    skills: ['Python', 'SQL', 'Excel'],\n    location_preference: 'remote or Australia',\n    avoid: ['senior', '10+ years'],\n  },\n  keywords: ['intern', 'graduate', 'junior', 'entry level', 'data analyst', 'machine learning', 'AI'],\n  max_to_score: 30,\n};\nconst strip = (t, n = 600) => String(t || '').replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, n);\n\nconst remotive = ($('Fetch Remotive').first().json.jobs || []).map(j => ({\n  source: 'remotive', title: j.title, company: j.company_name, url: j.url,\n  location: j.candidate_required_location || '', description: strip(j.description),\n}));\nconst arbeitnow = ($input.first().json.data || []).slice(0, 100).map(j => ({\n  source: 'arbeitnow', title: j.title, company: j.company_name, url: j.url,\n  location: j.location || '', description: strip(j.description),\n}));\n\n// Dedupe against what earlier runs already saw (kept in workflow static data; only persists when the workflow is active).\nconst store = $getWorkflowStaticData('global');\nconst seen = new Set(store.seen || []);\nconst kw = new RegExp('\\\\b(' + PROFILE.keywords.map(k => k.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')).join('|') + ')\\\\b', 'i');\nconst batch = new Set();\nconst fresh = [];\nfor (const j of [...remotive, ...arbeitnow]) {\n  const key = (j.company + '|' + j.title).toLowerCase();\n  if (!j.url || seen.has(j.url) || batch.has(key) || !kw.test(j.title + ' ' + j.description)) continue;\n  batch.add(key);\n  fresh.push(j);\n}\nconst postings = fresh.slice(0, PROFILE.max_to_score).map((j, i) => ({ ...j, id: String(i) }));\nstore.seen = [...seen, ...postings.map(j => j.url)].slice(-3000);\nif (!postings.length) return [];\n\nconst prompt = 'You rate job postings for one candidate. Be strict and honest.\\n' +\n  'Candidate profile (JSON): ' + JSON.stringify(PROFILE.candidate) + '\\n' +\n  'For each posting give an integer fit score 0-10 and a reason of at most 15 words.\\n' +\n  'Reply as a JSON array: [{\"id\": \"0\", \"score\": 7, \"reason\": \"...\"}]. Use the given ids.\\n' +\n  'Postings: ' + JSON.stringify(postings.map(({ id, title, company, location, description }) => ({ id, title, company, location, description })));\nreturn [{ json: { postings, body: { contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0.2 } } } }];\n"
+      }
+    },
+    {
+      "id": "n5",
+      "name": "Gemini score",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        0
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "",
+          "name": "Gemini API key"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "n6",
+      "name": "Rank and format",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Join Gemini scores to postings, keep the top N, build the digest text.\nconst TOP_N = 5, MIN_SCORE = 6;\nconst postings = $('Normalize and dedupe').first().json.postings;\nlet rows = [];\ntry { rows = JSON.parse($input.first().json.candidates[0].content.parts[0].text); } catch (e) { rows = []; }\nconst byId = Object.fromEntries(postings.map(p => [p.id, p]));\nconst ranked = (Array.isArray(rows) ? rows : [])\n  .filter(r => byId[r.id] && Number.isFinite(Number(r.score)))\n  .map(r => ({ ...byId[r.id], score: Math.max(0, Math.min(10, Math.round(Number(r.score)))), reason: String(r.reason || '').slice(0, 160) }))\n  .filter(r => r.score >= MIN_SCORE)\n  .sort((a, b) => b.score - a.score)\n  .slice(0, TOP_N);\nif (!ranked.length) return [];\nconst date = new Date().toISOString().slice(0, 10);\nconst lines = ['Job digest ' + date + ' - ' + ranked.length + ' match(es)', ''];\nranked.forEach((r, i) => lines.push((i + 1) + '. [' + r.score + '/10] ' + r.title + ' - ' + r.company + (r.location ? ' (' + r.location + ')' : ''), '   ' + r.reason, '   ' + r.url, ''));\nreturn [{ json: { text: lines.join('\\n').trim().slice(0, 4000) } }];\n"
+      }
+    },
+    {
+      "id": "n7",
+      "name": "Send to Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1440,
+        0
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "",
+          "name": "Telegram bot"
+        }
+      },
+      "parameters": {
+        "chatId": "REPLACE_WITH_YOUR_CHAT_ID",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Every morning": {
+      "main": [
+        [
+          {
+            "node": "Fetch Remotive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Remotive": {
+      "main": [
+        [
+          {
+            "node": "Fetch Arbeitnow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Arbeitnow": {
+      "main": [
+        [
+          {
+            "node": "Normalize and dedupe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize and dedupe": {
+      "main": [
+        [
+          {
+            "node": "Gemini score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini score": {
+      "main": [
+        [
+          {
+            "node": "Rank and format",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank and format": {
+      "main": [
+        [
+          {
+            "node": "Send to Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

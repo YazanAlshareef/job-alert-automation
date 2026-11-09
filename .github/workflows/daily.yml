@@ -1,0 +1,33 @@
+name: daily job alert
+
+on:
+  schedule:
+    - cron: "0 21 * * *"   # 21:00 UTC = 07:00 Brisbane / 08:00 Sydney (AEST)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write   # lets the job commit state/seen.json back
+
+jobs:
+  alert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: python -m unittest discover -s tests
+      - name: Send digest
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python main.py --send
+      - name: Save seen list
+        run: |
+          git config user.name "job-alert bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add state/seen.json
+          git diff --cached --quiet || (git commit -m "update seen postings" && git push)

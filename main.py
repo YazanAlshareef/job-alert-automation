@@ -35,13 +35,16 @@ def run(args):
         jobs, errors = sources.fetch_all(profile["sources"])
         jobs = scorer.prefilter(sources.dedupe(jobs, set(seen)), profile)[: profile.get("max_to_score", 45)]
         scores = scorer.score(jobs, profile) if jobs else {}
-    text = digest.render(digest.top(jobs, scores, profile.get("top_n", 5), profile.get("min_score", 6)))
+    ranked = digest.top(jobs, scores, profile.get("top_n", 5), profile.get("min_score", 6))
+    text = digest.render(ranked)
     print(text)
     for e in errors:
         print(f"warning: {e}", file=sys.stderr)
     if args.dry_run:
         return
-    if args.send:
+    if args.send and not ranked:
+        print("(nothing above min_score: no message sent)")
+    elif args.send:
         print("sent via:", ", ".join(digest.send(text)))
     else:
         print("(not sent: add --send)")
