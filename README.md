@@ -9,7 +9,7 @@ There are two versions of the same flow:
 
 ## How AI helped
 
-Gemini does the scoring: it reads each posting and my `profile.json` and returns a score and a short reason. an AI coding assistant helped write the code and tests. I checked the sources' terms and the output myself.
+Gemini does the scoring: it reads each posting and my `profile.json` and returns a score and a short reason. An AI coding assistant helped write the code and tests. I checked the sources' terms and the output myself.
 
 ## Run it (10 steps or fewer)
 

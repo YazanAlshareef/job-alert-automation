@@ -5,3 +5,4 @@ __pycache__/
 .venv/
 n8n/data/
 fixtures/_all.json
+BRIEF.md
