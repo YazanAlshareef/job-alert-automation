@@ -10,7 +10,7 @@ Fetch postings, remove ones I have seen, keep ones that mention my keywords, ask
 
 - `main.py`: the entry point. Reads `profile.json`, runs the steps in order. `--dry-run` uses saved data and sends nothing. `--send` really sends. Without `--send` it only prints. It saves the seen list only after a real send, so a failed send does not lose postings.
 - `sources.py`: one small function per source (Remotive, Arbeitnow, RSS). Each turns a posting into the same shape: id, title, company, url, location, description. `dedupe` drops postings I have seen or that repeat in the same batch. If one source is down, the others still run.
-- `scorer.py`: `prefilter` keeps postings that mention my keywords. `prompt_for` builds the prompt. `parse` checks the model's reply and throws away rows that are broken, so bad output cannot crash the run. Postings go in batches of 15 to keep calls few.
+- `scorer.py`: `prefilter` keeps postings that mention my keywords. `prompt_for` builds the prompt. `parse` checks the model's reply and throws away rows that are broken, so bad output cannot crash the run. If a whole reply is blocked, empty or not JSON, that batch is skipped with a warning and the other batches still count. Postings go in batches of 15 to keep calls few.
 - `llm.py`: the only file that talks to Gemini. The key and model name come from the environment. To use another model provider, change only this file. It retries on busy errors and never prints the key.
 - `digest.py`: picks the top N above `min_score`, formats the text, and sends it by Telegram and/or email.
 - `profile.json`: the file I edit. My profile for the model, keywords, how many results, minimum score, and the list of sources.

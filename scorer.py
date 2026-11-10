@@ -1,6 +1,7 @@
 """Score postings against profile.json with the LLM; batch to keep calls few."""
 import json
 import re
+import sys
 
 import llm
 
@@ -42,5 +43,8 @@ def score(jobs, profile):
     scores = {}
     for i in range(0, len(jobs), BATCH):
         batch = jobs[i:i + BATCH]
-        scores.update(parse(llm.generate_json(prompt_for(batch, profile)), batch))
+        try:
+            scores.update(parse(llm.generate_json(prompt_for(batch, profile)), batch))
+        except (KeyError, IndexError, TypeError, ValueError) as e:  # blocked or empty reply, or not JSON
+            print(f"warning: skipped a batch of {len(batch)}: bad model reply ({type(e).__name__})", file=sys.stderr)
     return scores

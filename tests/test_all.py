@@ -48,6 +48,18 @@ class TestScorer(unittest.TestCase):
         j = job("http://i", title="Data Internship", desc="")
         self.assertEqual(scorer.prefilter([j], profile), [j])
 
+    def test_bad_reply_skips_that_batch_only(self):
+        a, b = job("http://a"), job("http://b")
+        replies = [KeyError("candidates"), [{"id": b["id"], "score": 7, "reason": "ok"}]]
+
+        def fake(prompt):
+            r = replies.pop(0)
+            if isinstance(r, Exception):
+                raise r
+            return r
+        with mock.patch.object(scorer, "BATCH", 1), mock.patch.object(llm, "generate_json", fake):
+            self.assertEqual(scorer.score([a, b], {}), {b["id"]: {"score": 7, "reason": "ok"}})
+
     def test_parse_clamps_and_ignores_bad_rows(self):
         a = job("http://a")
         result = [{"id": a["id"], "score": 14, "reason": "x"}, {"id": "unknown", "score": 5},
