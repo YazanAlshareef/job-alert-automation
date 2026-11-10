@@ -14,8 +14,7 @@ Fetch postings, remove ones I have seen, keep ones that mention my keywords, ask
 - `llm.py`: the only file that talks to Gemini. The key and model name come from the environment. To use another model provider, change only this file. It retries on busy errors and never prints the key.
 - `digest.py`: picks the top N above `min_score`, formats the text, and sends it by Telegram and/or email.
 - `profile.json`: the file I edit. My profile for the model, keywords, how many results, minimum score, and the list of sources.
-- `fixtures/`: saved real postings and sample scores for the dry run.
-- `tools_make_fixtures.py`: the one-off script that saved the postings.
+- `fixtures/`: made-up sample postings and sample scores for the dry run.
 - `tests/test_all.py`: 12 tests with `unittest`. They cover dedupe, a source failing, the keyword filter, bad model output, the key never appearing in an error, the digest order, and the dry run end to end.
 - `state/seen.json`: ids of postings already shown (created on the first send).
 - `.github/workflows/daily.yml`: the free cron. Runs tests, runs `main.py --send`, commits the seen list back.

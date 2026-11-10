@@ -44,7 +44,7 @@ Add a source by adding a fetcher to `sources.py` and an entry in `profile.json`.
 
 ## Limits
 
-- The dry-run scores in `fixtures/scores.json` are sample values I wrote by hand, not real Gemini output. The postings in `fixtures/postings.json` are real, saved from the live sources.
+- The dry-run scores in `fixtures/scores.json` are sample values I wrote by hand, not real Gemini output. The postings in `fixtures/postings.json` are made-up examples (example.com links), not real jobs.
 - A live Gemini call and a real Telegram or email send have not been tested yet, because the key and bot are not set up. See `WALKTHROUGH.md` for what is covered by tests.
 - Scores are only as good as the profile text and the posting snippet (first 600 characters).
 - n8n remembers seen postings only while the workflow is active. The Python version keeps them in `state/seen.json`, committed by the Action.
