@@ -17,7 +17,7 @@ Gemini does the scoring: it reads each posting and my `profile.json` and returns
 2. Try the demo: `python main.py --dry-run`. It uses saved sample postings and sample scores, needs no key, and sends nothing.
 3. Edit `profile.json`: fill in `candidate.summary`, roles, skills, keywords.
 4. Get a Gemini API key at https://aistudio.google.com/apikey.
-5. Copy `.env.example` to `.env.local` and fill in `GEMINI_API_KEY` and `GEMINI_MODEL`.
+5. Copy `.env.example` to `.env.local` and fill in `GEMINI_API_KEY` and `GEMINI_MODEL`. The model name in the example is unverified, so set one that your key can use.
 6. Make a Telegram bot with @BotFather, message it once, and put the token and your chat id in `.env.local`. (Or fill the SMTP lines for email.)
 7. Live run, nothing sent: `python main.py`. It fetches, scores, and prints the digest.
 8. Send for real to the chat in `.env.local`: `python main.py --send`. For testing, point the chat id at a private test chat first.
@@ -48,7 +48,7 @@ Add a source by adding a fetcher to `sources.py` and an entry in `profile.json`.
 - A live Gemini call and a real Telegram or email send have not been tested yet, because the key and bot are not set up. See `WALKTHROUGH.md` for what is covered by tests.
 - Scores are only as good as the profile text and the posting snippet (first 600 characters).
 - n8n remembers seen postings only while the workflow is active. The Python version keeps them in `state/seen.json`, committed by the Action.
-- Gemini model names change. If a call fails with 404, set `GEMINI_MODEL` to a current model.
+- The default `gemini-2.5-flash` is unverified (not tested against the live API). Gemini model names change. If a call fails with 404, set `GEMINI_MODEL` to a current model.
 
 ## Licence
 
