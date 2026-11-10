@@ -100,6 +100,10 @@ class TestDigest(unittest.TestCase):
         ranked = digest.top(jobs, scores, n=5, min_score=6)
         self.assertEqual([j["title"] for _, j in ranked], ["B", "A"])
 
+    def test_render_shows_source(self):
+        j = sources.make("remotive", "T", "C", "http://x", "", "d")
+        self.assertIn("(via remotive)", digest.render([({"score": 8, "reason": "r"}, j)], today="2026-01-01"))
+
     def test_render_empty(self):
         self.assertIn("Nothing new", digest.render([], today="2026-01-01"))
 

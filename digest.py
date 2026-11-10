@@ -20,7 +20,7 @@ def render(ranked, today=None):
     lines = [head, ""]
     for i, (s, j) in enumerate(ranked, 1):
         where = f" ({j['location']})" if j["location"] else ""
-        lines += [f"{i}. [{s['score']}/10] {j['title']} - {j['company']}{where}", f"   {s['reason']}", f"   {j['url']}", ""]
+        lines += [f"{i}. [{s['score']}/10] {j['title']} - {j['company']}{where}", f"   {s['reason']}", f"   {j['url']} (via {j['source']})", ""]
     return "\n".join(lines).rstrip()
 
 
