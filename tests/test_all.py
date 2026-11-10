@@ -113,6 +113,14 @@ class TestDigest(unittest.TestCase):
                 digest.send("x")
 
 
+class TestProfileGuard(unittest.TestCase):
+    def test_live_run_refuses_placeholder_summary(self):
+        out = subprocess.run([sys.executable, str(ROOT / "main.py")], capture_output=True, text=True, encoding="utf-8",
+                             env={**os.environ, "GEMINI_API_KEY": "", "GEMINI_MODEL": ""})
+        self.assertNotEqual(out.returncode, 0)
+        self.assertIn("placeholder", out.stderr)
+
+
 class TestDryRun(unittest.TestCase):
     def test_dry_run_prints_digest_without_keys_or_network(self):
         env = {k: v for k, v in os.environ.items() if not k.startswith(("GEMINI", "TELEGRAM", "SMTP"))}

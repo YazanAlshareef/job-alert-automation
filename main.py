@@ -24,6 +24,8 @@ def run(args):
     profile = load(args.profile, None)
     if profile is None:
         sys.exit(f"Missing {args.profile}")
+    if not args.dry_run and str(profile.get("candidate", {}).get("summary", "")).startswith("EDIT ME"):
+        sys.exit("profile.json still has the placeholder summary. Fill in candidate.summary before a live run.")
     if args.dry_run:
         jobs = load(ROOT / "fixtures" / "postings.json", [])
         scores = load(ROOT / "fixtures" / "scores.json", {})
