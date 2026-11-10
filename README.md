@@ -29,8 +29,8 @@ Run the tests with `python -m unittest discover -s tests`.
 ## Sources
 
 - Remotive public API (https://remotive.com/api/remote-jobs). Their terms: link back to the posting, do not repost it elsewhere, and do not call it more than a few times a day. The digest links back to the original page and goes only to me.
-- Arbeitnow public job board API (https://www.arbeitnow.com/api/job-board-api). Their robots.txt allows it.
-- We Work Remotely public RSS feed (https://weworkremotely.com/remote-jobs.rss). Their robots.txt allows it. The n8n version does not include this feed.
+- Arbeitnow public job board API (https://www.arbeitnow.com/api/job-board-api). I read their robots.txt when I added it and it allowed this; I have not re-checked since, so check it again before relying on it.
+- We Work Remotely public RSS feed (https://weworkremotely.com/remote-jobs.rss). I read their robots.txt when I added it and it allowed this; not re-checked since. The n8n version does not include this feed.
 - Not used: LinkedIn, anything that needs a login, anything that blocks bots.
 
 Add a source by adding a fetcher to `sources.py` and an entry in `profile.json`. Check the site's robots.txt and terms first.
