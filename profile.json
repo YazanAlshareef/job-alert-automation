@@ -6,7 +6,7 @@
     "location_preference": "remote or Australia",
     "avoid": ["senior", "10+ years", "security clearance"]
   },
-  "keywords": ["intern", "graduate", "junior", "entry level", "data analyst", "machine learning", "AI"],
+  "keywords": ["intern", "internship", "graduate", "junior", "entry level", "data analyst", "machine learning", "AI"],
   "top_n": 5,
   "min_score": 6,
   "max_to_score": 45,

@@ -43,6 +43,11 @@ class TestScorer(unittest.TestCase):
         keep, drop = job("http://k", desc="We use AI daily"), job("http://d", desc="send an email")
         self.assertEqual(scorer.prefilter([keep, drop], profile), [keep])
 
+    def test_internship_passes_profile_keywords(self):
+        profile = json.loads((ROOT / "profile.json").read_text(encoding="utf-8"))
+        j = job("http://i", title="Data Internship", desc="")
+        self.assertEqual(scorer.prefilter([j], profile), [j])
+
     def test_parse_clamps_and_ignores_bad_rows(self):
         a = job("http://a")
         result = [{"id": a["id"], "score": 14, "reason": "x"}, {"id": "unknown", "score": 5},
