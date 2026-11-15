@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -66,7 +67,7 @@ class TestScorer(unittest.TestCase):
         self.assertEqual(scorer.prefilter([j], profile), [j])
 
     def test_bad_reply_skips_that_batch_only(self):
-        a, b = job("http://a"), job("http://b")
+        a, b = job("http://a", title="A"), job("http://b", title="B")
         replies = [KeyError("candidates"), [{"id": b["id"], "score": 7, "reason": "ok"}]]
 
         def fake(prompt):
@@ -128,6 +129,17 @@ class TestDigest(unittest.TestCase):
         with mock.patch.dict(os.environ, {}, clear=True):
             with self.assertRaises(RuntimeError):
                 digest.send("x")
+
+
+class TestSeenState(unittest.TestCase):
+    def test_only_scored_postings_are_marked_seen(self):
+        import argparse
+        import main
+        a, b = job("http://a", title="A"), job("http://b", title="B")
+        args = argparse.Namespace(dry_run=False, send=False, save_seen=True, profile="unused.json")
+        with tempfile.TemporaryDirectory() as d,                 mock.patch.object(main, "SEEN", Path(d) / "seen.json"),                 mock.patch.object(main, "load", side_effect=lambda p, default: [] if p == main.SEEN else {"candidate": {"summary": "x"}, "sources": []}),                 mock.patch("main.sources.fetch_all", return_value=([a, b], [])),                 mock.patch("main.scorer.prefilter", side_effect=lambda jobs, profile: jobs),                 mock.patch("main.scorer.score", return_value={a["id"]: {"score": 8, "reason": "r"}}):
+            main.run(args)
+            self.assertEqual(json.loads((Path(d) / "seen.json").read_text(encoding="utf-8")), [a["id"]])
 
 
 class TestProfileGuard(unittest.TestCase):
