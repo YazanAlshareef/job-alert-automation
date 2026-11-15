@@ -2,6 +2,7 @@ import json
 import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -132,8 +133,11 @@ class TestDigest(unittest.TestCase):
 
 class TestProfileGuard(unittest.TestCase):
     def test_live_run_refuses_placeholder_summary(self):
-        out = subprocess.run([sys.executable, str(ROOT / "main.py")], capture_output=True, text=True, encoding="utf-8",
-                             env={**os.environ, "GEMINI_API_KEY": "", "GEMINI_MODEL": ""})
+        with tempfile.TemporaryDirectory() as d:
+            prof = Path(d) / "profile.json"
+            prof.write_text(json.dumps({"candidate": {"summary": "EDIT ME: placeholder"}, "sources": []}), encoding="utf-8")
+            out = subprocess.run([sys.executable, str(ROOT / "main.py"), "--profile", str(prof)], capture_output=True,
+                                 text=True, encoding="utf-8", env={**os.environ, "GEMINI_API_KEY": "", "GEMINI_MODEL": ""})
         self.assertNotEqual(out.returncode, 0)
         self.assertIn("placeholder", out.stderr)
 
