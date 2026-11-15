@@ -1,33 +1,34 @@
 # Walkthrough
 
-Each file in plain English, so I can explain it in an interview.
+My notes on every file, so I can explain the project in an interview without guessing.
 
 ## The flow
 
-Fetch postings, remove ones I have seen, keep ones that mention my keywords, ask Gemini to score them, keep the best few, send them to me.
+Fetch postings, drop the ones I've already seen, keep the ones that mention my keywords, ask Gemini to score them, keep the best few, send them to me.
 
 ## Files
 
-- `main.py`: the entry point. Reads `profile.json`, runs the steps in order. `--dry-run` uses saved data and sends nothing. `--send` really sends. Without `--send` it only prints. It saves the seen list only after a real send, so a failed send does not lose postings.
-- `sources.py`: one small function per source (Remotive, Arbeitnow, RSS). Each turns a posting into the same shape: id, title, company, url, location, description. `dedupe` drops postings I have seen or that repeat in the same batch. If one source is down, the others still run.
-- `scorer.py`: `prefilter` keeps postings that mention my keywords. `prompt_for` builds the prompt. `parse` checks the model's reply and throws away rows that are broken, so bad output cannot crash the run. If a whole reply is blocked, empty or not JSON, that batch is skipped with a warning and the other batches still count. Postings go in batches of 15 to keep calls few.
-- `llm.py`: the only file that talks to Gemini. The key and model name come from the environment. To use another model provider, change only this file. It retries on busy errors and never prints the key.
-- `digest.py`: picks the top N above `min_score`, formats the text, and sends it by Telegram and/or email.
-- `profile.json`: the file I edit. My profile for the model, keywords, how many results, minimum score, and the list of sources.
-- `fixtures/`: made-up sample postings and sample scores for the dry run.
-- `tests/test_all.py`: 12 tests with `unittest`. They cover dedupe, a source failing, the keyword filter, bad model output, the key never appearing in an error, the digest order, and the dry run end to end.
-- `state/seen.json`: ids of postings already shown (created on the first send).
-- `.github/workflows/daily.yml`: the free cron. Runs tests, runs `main.py --send`, commits the seen list back.
-- `n8n/job-alert.workflow.json`: the same flow as an n8n workflow: schedule, two HTTP fetches, a code node to dedupe, a Gemini HTTP call, a code node to rank, a Telegram node.
-- `.env.example`: the names of the settings. Real values go in `.env.local`, which git ignores.
-- `requirements.txt`, `.gitignore`, `LICENSE` (MIT).
+- `main.py` is the entry point. It reads `profile.json` and runs the steps in order. `--dry-run` uses saved data and sends nothing. Without `--send` it only prints. With `--send` it sends, and only then saves the seen list, so a failed send doesn't lose postings. A live run stops early if the profile summary is still the placeholder. If `state/seen.json` is corrupt it is ignored with a warning.
+- `sources.py` has one small function per source (Remotive, Arbeitnow, RSS). Each returns postings in the same shape: id, source, title, company, url, location, description. RSS items with no link are skipped. `dedupe` drops postings I've seen and repeats within the same batch. If one source is down, the others still run.
+- `scorer.py` holds `prefilter`, which keeps postings that mention my keywords as whole words. `prompt_for` builds the prompt. `parse` checks the model's reply and drops broken rows, so bad output can't crash the run. Postings go to the model 15 at a time. If a whole reply is blocked, empty or not JSON, that batch is skipped with a warning and the rest still count.
+- `llm.py` is the only file that talks to Gemini. The key and model name come from the environment. To switch provider I'd change only this file. It retries on busy errors and never prints the key.
+- `digest.py` picks the top N above `min_score`, formats the text (with the source name on each line) and sends it by Telegram or email.
+- `profile.json` is the file I edit: my profile for the model, keywords, how many results, the minimum score, and the sources.
+- `fixtures/` holds made-up postings and hand-written scores for the dry run.
+- `tests/test_all.py` has 18 `unittest` tests. They cover dedupe, a failing source, the keyword filter, bad model output, the key never showing up in an error, digest order and source names, the placeholder guard, and the dry run end to end. None of them call Gemini or Telegram.
+- `state/seen.json` lists the ids I've already been shown. It appears after the first send.
+- `.github/workflows/daily.yml` is the free cron. It runs the tests, runs `main.py --send` and commits the seen list back.
+- `.github/workflows/ci.yml` runs the tests on every push, with no secrets.
+- `n8n/job-alert.workflow.json` is the same flow as n8n nodes: a schedule, two HTTP fetches, a code node that dedupes, a Gemini HTTP call, a code node that ranks, and a Telegram node. I confirmed it imports into n8n but did not run it there.
+- `.env.example` lists the setting names. Real values go in `.env.local`, which git ignores.
+- `requirements.txt`, `.gitignore` and `LICENSE` (MIT).
 
 ## Questions I should be able to answer
 
-- **Why batch the model calls?** Fewer requests, lower cost, stays inside free limits.
-- **Why validate the model's JSON?** Models sometimes return extra or wrong rows. Treat the output as untrusted input.
-- **Why keyword prefilter first?** Cheap filter before the paid step.
+- **Why batch the model calls?** Fewer requests, and I stay inside the free limits.
+- **Why validate the model's JSON?** Models sometimes return extra or wrong rows, so I treat the reply as untrusted input.
+- **Why filter by keyword first?** It's a cheap step that cuts how much the model has to read.
 - **Why two versions?** n8n is easy to see and change. The Action is free and needs no server.
-- **How is dedupe done?** By a hash of the posting URL, plus company and title within one batch.
-- **How are secrets handled?** Environment only: `.env.local` locally, GitHub secrets in the Action. Error messages never include the key or token.
-- **What is not tested?** A real Gemini reply and a real Telegram or email send.
+- **How does dedupe work?** A hash of the posting URL, plus company and title within one batch.
+- **How are secrets handled?** Only through the environment: `.env.local` on my machine and GitHub secrets in the Action. Error messages never include the key or token.
+- **What isn't tested?** A real Gemini reply and a real Telegram or email send. Nothing has run against the live APIs with my key yet.

@@ -1,54 +1,98 @@
 # Job Alert Automation
 
-A daily job digest. It pulls postings from public sources, drops ones it has already shown, asks Gemini to score each against my profile (0-10 with a one-line reason), and sends the top few to Telegram or email.
+A script that checks a few public job feeds each morning, asks Gemini how well each posting fits my profile, and sends me the best five.
 
-There are two versions of the same flow:
+I'm a student looking for data and AI internships. Reading the same boards every day wastes time, so I wanted something that does the first pass and tells me why a job is or isn't worth opening.
 
-- **n8n workflow** (`n8n/job-alert.workflow.json`): the visual one.
-- **Python + GitHub Actions** (`main.py`): free fallback that runs on a cron with no server.
+This is the dry run. It uses made-up postings and hand-written scores, so it needs no key and no network:
+
+```text
+$ python main.py --dry-run
+Job digest 2026-11-15 - 4 match(es)
+
+1. [9/10] Junior Data Analyst - Northwind Example Co (Remote)
+   Entry-level data role using SQL and Python, matches the profile.
+   https://example.com/jobs/1 (via sample)
+
+2. [8/10] Machine Learning Intern - Example Labs (Brisbane, Australia)
+   ML internship in Python, good fit and nearby.
+   https://example.com/jobs/2 (via sample)
+
+3. [8/10] Data Engineering Intern - Sample Analytics Ltd (Remote)
+   Data engineering internship, no experience needed.
+   https://example.com/jobs/3 (via sample)
+
+4. [7/10] AI Research Assistant - Fictional Institute (Remote)
+   AI research support, part-time, fits a student.
+   https://example.com/jobs/6 (via sample)
+```
+
+## Quick start
+
+```bash
+pip install -r requirements.txt
+python main.py --dry-run
+cp .env.example .env.local    # then fill in the keys, see below
+python main.py                # live fetch and scoring, prints only
+python main.py --send         # same, and sends to Telegram or email
+```
+
+## How it works
+
+```mermaid
+flowchart LR
+    A[Remotive API<br>Arbeitnow API<br>WWR RSS] --> B[Normalize and dedupe<br>against state/seen.json]
+    B --> C[Keyword filter]
+    C --> D[Gemini scores 0-10<br>in batches of 15]
+    D --> E[Top N above min_score]
+    E --> F[Telegram or email]
+```
+
+There are two versions of the same flow. The Python one (`main.py`) runs on a GitHub Actions cron and needs no server. The n8n one (`n8n/job-alert.workflow.json`) shows the same steps as nodes. I only checked that the n8n file imports. I have not run it end to end in n8n.
 
 ## How AI helped
 
-Gemini does the scoring: it reads each posting and my `profile.json` and returns a score and a short reason. An AI coding assistant helped write the code and tests. I checked the sources' terms and the output myself.
+Gemini scores each posting against `profile.json` and gives a one-line reason. An AI coding assistant helped me write the code and tests. I read the sources' terms and checked the output myself.
 
-## Run it (10 steps or fewer)
+## Setup
 
 1. Install Python 3.12 and run `pip install -r requirements.txt`.
-2. Try the demo: `python main.py --dry-run`. It uses saved sample postings and sample scores, needs no key, and sends nothing.
-3. Edit `profile.json`: fill in `candidate.summary`, roles, skills, keywords.
-4. Get a Gemini API key at https://aistudio.google.com/apikey.
-5. Copy `.env.example` to `.env.local` and fill in `GEMINI_API_KEY` and `GEMINI_MODEL`. The model name in the example is unverified, so set one that your key can use.
-6. Make a Telegram bot with @BotFather, message it once, and put the token and your chat id in `.env.local`. (Or fill the SMTP lines for email.)
-7. Live run, nothing sent: `python main.py`. It fetches, scores, and prints the digest.
-8. Send for real to the chat in `.env.local`: `python main.py --send`. For testing, point the chat id at a private test chat first.
-9. Free daily schedule: push to GitHub, add secrets `GEMINI_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` and variable `GEMINI_MODEL` (Settings, Secrets and variables, Actions). `.github/workflows/daily.yml` then runs every day. Test it with the "Run workflow" button.
-10. n8n instead: import `n8n/job-alert.workflow.json`, create credentials "Gemini API key" (Header Auth, name `x-goog-api-key`) and "Telegram bot", set your chat id in the last node, edit the profile in the "Normalize and dedupe" node, activate.
+2. Run `python main.py --dry-run` to see the demo.
+3. Edit `profile.json`. Fill in `candidate.summary`, roles, skills and keywords. A live run refuses to start while the summary still says "EDIT ME".
+4. Get a Gemini key at https://aistudio.google.com/apikey.
+5. Copy `.env.example` to `.env.local` and fill in `GEMINI_API_KEY` and `GEMINI_MODEL`. The model name in the example is unverified, so use one your key can call.
+6. Make a Telegram bot with @BotFather, message it once, and put the token and your chat id in `.env.local`. Email over SMTP also works.
+7. Run `python main.py`. It fetches, scores and prints, and sends nothing.
+8. Run `python main.py --send` to send. While testing, point the chat id at a private chat.
+9. For the daily schedule, push to GitHub and add the secrets `GEMINI_API_KEY`, `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`, plus the variable `GEMINI_MODEL`. `.github/workflows/daily.yml` then runs every day, and the Run workflow button lets you test it.
+10. To use n8n instead, import the workflow JSON, create the credentials "Gemini API key" (Header Auth, name `x-goog-api-key`) and "Telegram bot", set your chat id in the last node, edit the profile in the "Normalize and dedupe" node, and activate it.
 
-Run the tests with `python -m unittest discover -s tests`.
+Tests run with `python -m unittest discover -s tests`. The `tests` workflow in GitHub Actions runs the same command on every push.
 
 ## Sources
 
-- Remotive public API (https://remotive.com/api/remote-jobs). Their terms: link back to the posting, do not repost it elsewhere, and do not call it more than a few times a day. The digest links back to the original page and goes only to me.
-- Arbeitnow public job board API (https://www.arbeitnow.com/api/job-board-api). I read their robots.txt when I added it and it allowed this; I have not re-checked since, so check it again before relying on it.
-- We Work Remotely public RSS feed (https://weworkremotely.com/remote-jobs.rss). I read their robots.txt when I added it and it allowed this; not re-checked since. The n8n version does not include this feed.
-- Not used: LinkedIn, anything that needs a login, anything that blocks bots.
+- Remotive public API (https://remotive.com/api/remote-jobs). Their terms say to link back to the posting, not repost it, and not call the API more than a few times a day. The digest links to the original page and goes only to me.
+- Arbeitnow public API (https://www.arbeitnow.com/api/job-board-api). I read their robots.txt when I added it and it allowed this. I haven't re-checked since.
+- We Work Remotely RSS (https://weworkremotely.com/remote-jobs.rss). Same robots.txt note. The n8n version leaves this feed out.
+- Not used: LinkedIn, anything behind a login, anything that blocks bots.
 
-Add a source by adding a fetcher to `sources.py` and an entry in `profile.json`. Check the site's robots.txt and terms first.
+To add a source, write a fetcher in `sources.py` and add an entry to `profile.json`. Read the site's robots.txt and terms first.
 
-## What broke and how it was fixed
+## What went wrong along the way
 
-- Keyword filter matched "AI" inside "email" and passed almost everything. It now matches whole words only.
+- The keyword filter matched "AI" inside "email" and let nearly everything through. It now matches whole words, which is also why "internship" is its own keyword.
 - The Windows console crashed on an en dash in a company name. `main.py` now forces UTF-8 output.
-- The first We Work Remotely feed URL returned an empty body. I switched to their main feed.
-- Docker was installed but its engine was not running on my machine, so I did not use it for n8n.
+- The first We Work Remotely URL returned an empty page. I switched to their main feed.
+- Docker was installed but its engine wasn't running, so I installed n8n with npm.
 
 ## Limits
 
-- The dry-run scores in `fixtures/scores.json` are sample values I wrote by hand, not real Gemini output. The postings in `fixtures/postings.json` are made-up examples (example.com links), not real jobs.
-- A live Gemini call and a real Telegram or email send have not been tested yet, because the key and bot are not set up. See `WALKTHROUGH.md` for what is covered by tests.
-- Scores are only as good as the profile text and the posting snippet (first 600 characters).
-- n8n remembers seen postings only while the workflow is active. The Python version keeps them in `state/seen.json`, committed by the Action.
-- The default `gemini-2.5-flash` is unverified (not tested against the live API). Gemini model names change. If a call fails with 404, set `GEMINI_MODEL` to a current model.
+- I have not made a live Gemini call or a real Telegram or email send yet, because I haven't set up the key and bot. The tests cover the parts around them with fakes.
+- The Actions schedule has not run yet either.
+- The scores in the dry run are values I wrote by hand, and the postings are made up.
+- The default model `gemini-2.5-flash` is unverified against my key. The Gemini docs I read list it as a stable model, but newer Flash models exist and names change. If a call fails with a 404, set `GEMINI_MODEL` to a current one.
+- Scores are only as good as the profile text and the first 600 characters of each posting.
+- n8n remembers seen postings only while the workflow is active. The Python version keeps them in `state/seen.json` and the Action commits that file back.
 
 ## Licence
 
