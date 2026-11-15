@@ -18,6 +18,9 @@ def load(path, default):
         return json.loads(Path(path).read_text(encoding="utf-8"))
     except FileNotFoundError:
         return default
+    except json.JSONDecodeError:  # a half-written state file must not stop every future run
+        print(f"warning: {path} is not valid JSON, ignoring it", file=sys.stderr)
+        return default
 
 
 def run(args):

@@ -37,6 +37,23 @@ class TestSources(unittest.TestCase):
         self.assertIn("remotive", errors[0])
 
 
+class TestEdgeCases(unittest.TestCase):
+    def test_rss_item_without_link_is_skipped(self):
+        xml = (b"<rss><channel><item><title>A: Data Intern</title><link>http://ok</link></item>"
+               b"<item><title>B: No link</title></item></channel></rss>")
+        with mock.patch.object(sources.requests, "get", return_value=mock.Mock(content=xml, raise_for_status=lambda: None)):
+            jobs = sources.rss({"url": "http://feed"})
+        self.assertEqual([j["url"] for j in jobs], ["http://ok"])
+
+    def test_corrupt_state_file_is_ignored(self):
+        import tempfile
+        import main
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d) / "seen.json"
+            p.write_text('["abc", ', encoding="utf-8")
+            self.assertEqual(main.load(p, []), [])
+
+
 class TestScorer(unittest.TestCase):
     def test_prefilter_whole_words(self):
         profile = {"keywords": ["AI"]}

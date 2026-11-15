@@ -43,11 +43,14 @@ def rss(cfg):
     r.raise_for_status()
     out = []
     for item in ET.fromstring(r.content).iter("item"):
+        link = item.findtext("link") or ""
+        if not link:  # an empty url would hash to the same id for every such item
+            continue
         title = item.findtext("title") or ""
         company, sep, role = title.partition(": ")  # WWR titles look like "Company: Role"
         if not sep:
             company, role = "", title
-        out.append(make(cfg.get("name", "rss"), role, company, item.findtext("link") or "",
+        out.append(make(cfg.get("name", "rss"), role, company, link,
                         item.findtext("region") or "", item.findtext("description") or ""))
     return out
 
