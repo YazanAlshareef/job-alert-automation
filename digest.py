@@ -26,8 +26,11 @@ def render(ranked, today=None):
 
 def send_telegram(text):
     token, chat = os.environ["TELEGRAM_BOT_TOKEN"], os.environ["TELEGRAM_CHAT_ID"]
-    r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage",
-                      json={"chat_id": chat, "text": text[:4000], "disable_web_page_preview": True}, timeout=20)
+    try:
+        r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage",
+                          json={"chat_id": chat, "text": text[:4000], "disable_web_page_preview": True}, timeout=20)
+    except requests.RequestException as e:  # connection errors quote the url, which holds the token
+        raise RuntimeError(f"Telegram request failed: {type(e).__name__}") from None
     if not r.ok:
         raise RuntimeError(f"Telegram HTTP {r.status_code}")  # never include r.url: it holds the token
 

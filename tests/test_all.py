@@ -128,6 +128,14 @@ class TestDigest(unittest.TestCase):
         with mock.patch.dict(os.environ, {}, clear=True):
             with self.assertRaises(RuntimeError):
                 digest.send("x")
+    def test_telegram_network_error_hides_token(self):
+        err = digest.requests.ConnectionError("HTTPSConnectionPool: /botFAKETOKEN123/sendMessage")
+        with mock.patch.dict(os.environ, {"TELEGRAM_BOT_TOKEN": "FAKETOKEN123", "TELEGRAM_CHAT_ID": "1"}),                 mock.patch("digest.requests.post", side_effect=err):
+            with self.assertRaises(RuntimeError) as cm:
+                digest.send_telegram("x")
+        self.assertNotIn("FAKETOKEN123", str(cm.exception))
+        self.assertIsNone(cm.exception.__cause__)
+        self.assertTrue(cm.exception.__suppress_context__)
 
 
 class TestProfileGuard(unittest.TestCase):
