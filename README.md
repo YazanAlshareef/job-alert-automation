@@ -54,6 +54,13 @@ There are two versions of the same flow. The Python one (`main.py`) runs on a Gi
 
 Gemini scores each posting against `profile.json` and gives a one-line reason. An AI coding assistant helped me write the code and tests. I read the sources' terms and checked the output myself.
 
+## Diagrams
+
+- [Components](docs/diagrams/components.md): modules and outside systems
+- [Daily run sequence](docs/diagrams/sequence-daily-run.md): what `main.py --send` does in order
+- [Scoring and retry sequence](docs/diagrams/sequence-scoring.md): batches, retries and reply checks
+- [Daily alert process (BPMN)](docs/diagrams/bpmn.md): the process as a `.bpmn` file with notes on opening it
+
 ## Setup
 
 1. Install Python 3.12 and run `pip install -r requirements.txt`.
