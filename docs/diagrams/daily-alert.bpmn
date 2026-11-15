@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="DailyAlert" name="Daily job alert" isExecutable="false">
+    <bpmn:startEvent id="Start" name="Daily schedule or manual run">
+      <bpmn:outgoing>f1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="Fetch" name="Fetch postings from sources">
+      <bpmn:incoming>f1</bpmn:incoming>
+      <bpmn:outgoing>f2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Dedupe" name="Drop seen and repeated postings">
+      <bpmn:incoming>f2</bpmn:incoming>
+      <bpmn:outgoing>f3</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Filter" name="Keyword filter, cap at max_to_score">
+      <bpmn:incoming>f3</bpmn:incoming>
+      <bpmn:outgoing>f4</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Score" name="Score batches of 15 with Gemini">
+      <bpmn:incoming>f4</bpmn:incoming>
+      <bpmn:outgoing>f5</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Rank" name="Keep top N at or above min_score">
+      <bpmn:incoming>f5</bpmn:incoming>
+      <bpmn:outgoing>f6</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Any" name="Any matches?">
+      <bpmn:incoming>f6</bpmn:incoming>
+      <bpmn:outgoing>fYes</bpmn:outgoing>
+      <bpmn:outgoing>fNo</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Send" name="Send digest to Telegram or email">
+      <bpmn:incoming>fYes</bpmn:incoming>
+      <bpmn:outgoing>f7</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Join">
+      <bpmn:incoming>f7</bpmn:incoming>
+      <bpmn:incoming>fNo</bpmn:incoming>
+      <bpmn:outgoing>f8</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Save" name="Save seen list and commit it">
+      <bpmn:incoming>f8</bpmn:incoming>
+      <bpmn:outgoing>f9</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="End" name="Done">
+      <bpmn:incoming>f9</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="f1" sourceRef="Start" targetRef="Fetch" />
+    <bpmn:sequenceFlow id="f2" sourceRef="Fetch" targetRef="Dedupe" />
+    <bpmn:sequenceFlow id="f3" sourceRef="Dedupe" targetRef="Filter" />
+    <bpmn:sequenceFlow id="f4" sourceRef="Filter" targetRef="Score" />
+    <bpmn:sequenceFlow id="f5" sourceRef="Score" targetRef="Rank" />
+    <bpmn:sequenceFlow id="f6" sourceRef="Rank" targetRef="Any" />
+    <bpmn:sequenceFlow id="fYes" name="yes" sourceRef="Any" targetRef="Send" />
+    <bpmn:sequenceFlow id="fNo" name="no" sourceRef="Any" targetRef="Join" />
+    <bpmn:sequenceFlow id="f7" sourceRef="Send" targetRef="Join" />
+    <bpmn:sequenceFlow id="f8" sourceRef="Join" targetRef="Save" />
+    <bpmn:sequenceFlow id="f9" sourceRef="Save" targetRef="End" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_1">
+    <bpmndi:BPMNPlane id="Plane_1" bpmnElement="DailyAlert">
+      <bpmndi:BPMNShape id="Start_di" bpmnElement="Start"><dc:Bounds x="152" y="102" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="130" y="145" width="80" height="40" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Fetch_di" bpmnElement="Fetch"><dc:Bounds x="240" y="80" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Dedupe_di" bpmnElement="Dedupe"><dc:Bounds x="390" y="80" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Filter_di" bpmnElement="Filter"><dc:Bounds x="540" y="80" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Score_di" bpmnElement="Score"><dc:Bounds x="690" y="80" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Rank_di" bpmnElement="Rank"><dc:Bounds x="840" y="80" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Any_di" bpmnElement="Any" isMarkerVisible="true"><dc:Bounds x="995" y="95" width="50" height="50" /><bpmndi:BPMNLabel><dc:Bounds x="988" y="65" width="65" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Send_di" bpmnElement="Send"><dc:Bounds x="1100" y="80" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Join_di" bpmnElement="Join" isMarkerVisible="true"><dc:Bounds x="1255" y="95" width="50" height="50" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Save_di" bpmnElement="Save"><dc:Bounds x="1360" y="80" width="100" height="80" /></bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_di" bpmnElement="End"><dc:Bounds x="1512" y="102" width="36" height="36" /><bpmndi:BPMNLabel><dc:Bounds x="1517" y="145" width="26" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1"><di:waypoint x="188" y="120" /><di:waypoint x="240" y="120" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2"><di:waypoint x="340" y="120" /><di:waypoint x="390" y="120" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3"><di:waypoint x="490" y="120" /><di:waypoint x="540" y="120" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4_di" bpmnElement="f4"><di:waypoint x="640" y="120" /><di:waypoint x="690" y="120" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5"><di:waypoint x="790" y="120" /><di:waypoint x="840" y="120" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6"><di:waypoint x="940" y="120" /><di:waypoint x="995" y="120" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="fYes_di" bpmnElement="fYes"><di:waypoint x="1045" y="120" /><di:waypoint x="1100" y="120" /><bpmndi:BPMNLabel><dc:Bounds x="1063" y="102" width="18" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="fNo_di" bpmnElement="fNo"><di:waypoint x="1020" y="145" /><di:waypoint x="1020" y="220" /><di:waypoint x="1280" y="220" /><di:waypoint x="1280" y="145" /><bpmndi:BPMNLabel><dc:Bounds x="1145" y="202" width="14" height="14" /></bpmndi:BPMNLabel></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f7_di" bpmnElement="f7"><di:waypoint x="1200" y="120" /><di:waypoint x="1255" y="120" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f8_di" bpmnElement="f8"><di:waypoint x="1305" y="120" /><di:waypoint x="1360" y="120" /></bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f9_di" bpmnElement="f9"><di:waypoint x="1460" y="120" /><di:waypoint x="1512" y="120" /></bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
