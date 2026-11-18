@@ -50,9 +50,9 @@ flowchart LR
 
 There are two versions of the same flow. The Python one (`main.py`) runs on a GitHub Actions cron and needs no server. The n8n one (`n8n/job-alert.workflow.json`) shows the same steps as nodes. I only checked that the n8n file imports. I have not run it end to end in n8n.
 
-## How AI helped
+## How Gemini is used
 
-Gemini scores each posting against `profile.json` and gives a one-line reason. An AI coding assistant helped me write the code and tests. I read the sources' terms and checked the output myself.
+Gemini scores each posting against `profile.json` and gives a one-line reason. I read the sources' terms and checked the output myself.
 
 ## Diagrams
 
