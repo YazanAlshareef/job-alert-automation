@@ -55,7 +55,7 @@ def run(args):
         print("(not sent: add --send)")
     if args.send or args.save_seen:  # only mark seen once the digest really went out
         SEEN.parent.mkdir(exist_ok=True)
-        SEEN.write_text(json.dumps((seen + [j["id"] for j in jobs])[-SEEN_MAX:]), encoding="utf-8")
+        SEEN.write_text(json.dumps((seen + [j["id"] for j in jobs if j["id"] in scores])[-SEEN_MAX:]), encoding="utf-8")
 
 
 if __name__ == "__main__":
